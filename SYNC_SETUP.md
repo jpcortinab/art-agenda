@@ -6,7 +6,7 @@ To enable **automatic private cloud sync**:
 
 1. Create a Supabase project (or connect an existing project). This incurs any usage costs associated with your Supabase plan.
 2. In the project's SQL editor, run the SQL below. The row-level security policies limit each user's data to their own authenticated account.
-3. In Supabase **Authentication > URL Configuration**, set the site URL to `https://jpcortinab.github.io/wherejpgoesny/art/` and add that exact URL to allowed redirects. Enable the email provider for passwordless sign-in.
+3. In Supabase **Authentication > URL Configuration**, set the site URL to `https://jpcortinab.github.io/art-agenda/` and add that exact URL to allowed redirects. Enable the email provider for passwordless sign-in.
 4. Edit `art/cloud-config.js` on GitHub and provide **only** the public Project URL and publishable/anon key. These are intended for browser use. **Never commit a service-role secret.**
 5. Publish. Click **Sync / share** and request a sign-in email. Open that link on each device using the same email account.
 
