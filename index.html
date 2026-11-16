@@ -215,6 +215,24 @@ dialog::backdrop{background:#1c332ab8;backdrop-filter:blur(3px)}
 .map-view .map-pane{position:relative;top:auto;width:100%}
 .map-view .map-container{height:min(72vh,790px);min-height:515px}
 @media(max-width:555px){.map-view .map-container{height:65vh;min-height:400px}.map-toolbar{padding:0 14px 13px;gap:8px}.map-filter button{padding:7px 10px}}
+/* Minimalist Manhattan atlas: keep streets functional, but let the exhibitions lead. */
+.map-container,#map{background:#eeece5}
+#map .leaflet-tile-pane{filter:grayscale(1) saturate(.1) brightness(1.1) contrast(.70);opacity:.84}
+.map-maplabel{position:absolute;z-index:450;left:15px;top:15px;display:flex;flex-direction:column;gap:4px;pointer-events:none;padding:11px 13px 10px;border:1px solid #dbe0d6;background:#fbfaf5ee;border-radius:8px;box-shadow:0 2px 10px #263a2610}
+.map-maplabel strong{font:700 11px/1.2 var(--sans);letter-spacing:.21em;color:#385342}
+.map-maplabel span{font-size:8px;letter-spacing:.16em;color:#8b958b;font-weight:600}
+#map .leaflet-control-zoom{border:1px solid #dce2d8;border-radius:8px;overflow:hidden;box-shadow:0 3px 12px #263d2618}
+#map .leaflet-control-zoom a{background:#fbfaf6;color:#44604c;border-color:#e5e9e1}
+#map .leaflet-control-zoom a:hover{background:#f1f3ed}
+#map .leaflet-control-attribution{background:#fbfaf6dd!important;color:#8a9389;font-size:9px!important;padding:2px 5px}
+#map .leaflet-control-attribution a{color:#607b69}
+.art-pin{position:relative;display:flex;align-items:center;justify-content:center;width:24px;height:24px;line-height:20px;font-size:0;font-weight:700;background:#315941;color:#fff;border:2px solid #fbfaf5;border-radius:50%;box-shadow:0 0 0 1px #375d4738,0 2px 9px #263e2c34}
+.art-pin:not(.many):after{content:'';display:block;width:6px;height:6px;background:#f7f6f0;border-radius:50%}
+.art-pin.is-visited{background:#bdc8bd;box-shadow:0 0 0 1px #7c94836a,0 1px 6px #263e2c1c}
+.art-pin.is-visited:not(.many):after{background:#546c5a}
+.art-pin.many{width:28px;height:28px;min-width:28px;line-height:24px;font-size:11px;background:#315941}
+.art-pin.is-selected{outline:2px solid #cb9271;outline-offset:3px}
+@media(max-width:555px){.map-maplabel{left:11px;top:11px;padding:9px 10px}.map-maplabel strong{font-size:10px}}
 </style>
 </head>
 <body>
@@ -290,10 +308,11 @@ dialog::backdrop{background:#1c332ab8;backdrop-filter:blur(3px)}
           <div id="watchCards" class="cards" aria-live="polite"></div>
         </div>
         <aside class="map-pane" aria-label="Map of saved exhibitions">
-          <div class="map-head"><div><h3>The watchlist map</h3><p id="mapSubtitle">Your exhibitions, pinned around the city.</p></div><button type="button" class="ghost mini" id="fitPins">Fit pins ↗</button></div>
+          <div class="map-head"><div><h3 id="mapTitle">The watchlist map</h3><p id="mapSubtitle">Your exhibitions, pinned around the city.</p></div><button type="button" class="ghost mini" id="fitPins">Fit pins ↗</button></div>
           <div class="map-toolbar" id="mapToolbar" hidden><span>Show exhibitions</span><div class="map-filter" aria-label="Map pin filters"><button type="button" data-map-status="all" class="active" aria-pressed="true">All</button><button type="button" data-map-status="todo" aria-pressed="false">To visit</button><button type="button" data-map-status="done" aria-pressed="false">Visited</button></div></div>
           <div class="map-container">
-            <div id="map" role="region" aria-label="Map of current-month watchlist pins"></div>
+            <div id="map" role="region" aria-label="Interactive map of Manhattan and the current month's exhibition pins"></div>
+            <div class="map-maplabel" aria-hidden="true"><strong>MANHATTAN</strong><span>NEW YORK CITY</span></div>
             <div id="offlineMap"><div class="offline-message">Approximate map · Connect to view the street map.</div></div>
             <div id="mapEmpty" class="map-empty"><div><strong>No pins yet.</strong><span>Open All exhibitions and add a show to place it on your map.</span></div></div>
           </div>
@@ -572,6 +591,8 @@ function renderStats(){
   $('heroSaved').textContent=w.length;$('heroDone').textContent=done;$('heroCatalog').textContent=allShows().length;
   $('navWatchCount').textContent=w.length;$('navCatalogCount').textContent=allShows().length;
   $('watchTitle').textContent=shortMonth(month)+(page==='map'?' gallery map':' watchlist');
+  $('mapTitle').textContent=page==='map'?'Manhattan':'The watchlist map';
+  $('fitPins').textContent=page==='map'?'Manhattan view ↗':'Fit pins ↗';
   $('watchSubtitle').textContent=`${w.length} saved · ${done} visited · ${w.length-done} left to see. Click a card's pin to locate it on the map.`;
   $('monthSelect').value=month;
   $('formMonth').textContent=monthName(month);
@@ -687,11 +708,12 @@ function renderMarkers(shows){
   markers.forEach(m=>map.removeLayer(m.marker));markers=[];
   for(const group of groups){
     const allSeen=group.shows.every(s=>wasVisited(s.id)),many=group.shows.length>1;
-    const text=many?group.shows.length:(group.shows[0].artist.charAt(0)||'•');
-    const color=allSeen?'#879b8b':colorFor(group.shows[0].area);
+    const text=many?String(group.shows.length):'';
+    const color=allSeen?'#bdc8bd':'#315941';
     const classes=['art-pin',allSeen?'is-visited':'',many?'many':'',group.shows.some(s=>s.id===focusedId)?'is-selected':''].join(' ');
     const html=`<div class="${classes}" style="--pin-color:${color}">${escapeHtml(text)}</div>`;
-    const icon=L.divIcon({className:'',html,iconSize:[32,32],iconAnchor:[16,16]});
+    const size=many?28:24;
+    const icon=L.divIcon({className:'',html,iconSize:[size,size],iconAnchor:[size/2,size/2]});
     const marker=L.marker(group.point,{icon,keyboard:true,alt:group.shows.map(s=>s.artist).join(', ')}).addTo(map);
     marker.bindPopup(pinPopup(group),{minWidth:185,maxWidth:270});
     markers.push({marker,group});
@@ -707,8 +729,9 @@ function drawOfflinePins(groups){
     const x=Math.max(8,Math.min(93,35+(lon+74.015)/0.066*45));
     const y=Math.max(7,Math.min(93,10+(40.790-lat)/0.086*83));
     const pin=document.createElement('button');pin.type='button';pin.className='offline-pin';
-    pin.style.left=x+'%';pin.style.top=y+'%';pin.style.background=colorFor(group.shows[0].area);
-    pin.textContent=group.shows.length>1?String(group.shows.length):group.shows[0].artist.charAt(0);
+    const seen=group.shows.every(s=>wasVisited(s.id));
+    pin.style.left=x+'%';pin.style.top=y+'%';pin.style.background=seen?'#bdc8bd':'#315941';
+    pin.textContent=group.shows.length>1?String(group.shows.length):'•';
     pin.title=group.shows.map(s=>s.artist).join(', ');pin.addEventListener('click',()=>focusPin(group.shows[0].id));
     area.appendChild(pin);
   }
@@ -717,7 +740,7 @@ function initMap(){
   if(typeof L==='undefined'){
     offlineMode=true;$('offlineMap').style.display='block';renderMarkers(visibleWatch());return;
   }
-  map=L.map('map',{scrollWheelZoom:false,zoomControl:false}).setView([40.748,-73.99],12);
+  map=L.map('map',{scrollWheelZoom:false,zoomControl:false,minZoom:10}).setView([40.766,-73.976],12);
   L.control.zoom({position:'bottomright'}).addTo(map);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
     maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'
@@ -728,10 +751,18 @@ function initMap(){
   });
   renderMarkers(visibleWatch());setTimeout(()=>{map.invalidateSize();fitMapPins();},140);
 }
+// Full-island framing on the Map tab; the Watchlist keeps a closer, pin-focused view.
+const MANHATTAN_BOUNDS=[[40.695,-74.050],[40.875,-73.906]];
 function fitMapPins(){
   if(!map || page==='explore')return;
   const points=locationGroups(mapVisibleShows()).map(g=>g.point);
-  if(!points.length)return;
+  if(page==='map'){
+    const bounds=L.latLngBounds(MANHATTAN_BOUNDS);
+    for(const point of points)bounds.extend(point);
+    map.fitBounds(bounds,{padding:[40,40],maxZoom:13,animate:false});
+    return;
+  }
+  if(!points.length){map.fitBounds(L.latLngBounds(MANHATTAN_BOUNDS),{padding:[30,30],animate:false});return;}
   if(points.length===1)map.setView(points[0],15);
   else map.fitBounds(L.latLngBounds(points),{padding:[43,43],maxZoom:15,animate:false});
 }
