@@ -9,10 +9,10 @@
     "start": "2026-11-07",
     "close": "2026-11-18",
     "url": "https://www.sothebys.com/en/series/the-new-york-sales",
-    "note": "Modern auction previews run through Nov 18. Planned for Tuesday, Nov 17, during lunch; reserve a free entry time. The Now & Contemporary previews finish Nov 15.",
+    "note": "Modern auction previews run through Nov 18; the Now & Contemporary previews finish Nov 15.",
     "kind": "Auction preview",
     "reservation": true,
-    "planned": "Tue, Nov 17 · lunch break",
+    "planned": "",
     "points": [
       [
         40.77341,
@@ -30,8 +30,8 @@
     "address": "20 Rockefeller Plaza, New York, NY 10020",
     "close": "2026-11-17",
     "url": "https://www.christies.com/en/auction/20th-century-evening-sale-24266-nyr/overview",
-    "note": "20th Century Evening Sale preview; planned Monday, Nov 16, during lunch. The live sale is Nov 17 at 6:30 PM.",
-    "planned": "Mon, Nov 16 · lunch break",
+    "note": "20th Century Evening Sale preview. The live sale is Nov 17 at 6:30 PM.",
+    "planned": "",
     "points": [
       [
         40.75877,
@@ -116,7 +116,7 @@
     "address": "974 Madison Avenue, New York, NY 10075",
     "close": "2026-12-22",
     "url": "https://gagosian.com/exhibitions/2026/friends-and-legends-the-collection-of-michael-chow-new-york/",
-    "note": "Basquiat, Hockney, Haring and Warhol portraits from Michael Chow’s collection. Special Sunday opening Nov 15, 1–5 PM; easy to pair with Sotheby’s.",
+    "note": "Basquiat, Hockney, Haring and Warhol portraits from Michael Chow's collection. Special Sunday opening Nov 15.",
     "points": [
       [
         40.77323,
@@ -126,7 +126,7 @@
     "kind": "Gallery",
     "start": "2026-11-14",
     "curated": true,
-    "planned": "Sun, Nov 15 · 1–5 PM"
+    "planned": ""
   },
   {
     "id": "bacon",
@@ -137,7 +137,7 @@
     "address": "19 East 64th Street, New York, NY 10065",
     "close": "2026-12-19",
     "url": "https://www.levygorvydayan.com/exhibitions/bacon-de-kooning",
-    "note": "A rare dialogue between Francis Bacon and Willem de Kooning. Closed Sunday; visit Tuesday–Saturday, 10 AM–6 PM.",
+    "note": "A dialogue between Francis Bacon and Willem de Kooning.",
     "points": [
       [
         40.76643,
@@ -491,6 +491,28 @@
       [
         40.7256,
         -73.99854
+      ]
+    ],
+    "curated": true
+  },
+  {
+    "id": "frick-collection",
+    "artist": "The Frick Collection",
+    "title": "The Frick Collection",
+    "venue": "The Frick Collection",
+    "area": "Upper East Side",
+    "address": "1 East 70th Street, New York, NY 10021",
+    "start": null,
+    "close": null,
+    "url": "https://www.frick.org/visit",
+    "note": "Permanent collection in the museum's historic Fifth Avenue home.",
+    "kind": "Museum visit",
+    "reservation": false,
+    "planned": "",
+    "points": [
+      [
+        40.7711,
+        -73.9672
       ]
     ],
     "curated": true
