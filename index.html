@@ -231,6 +231,7 @@ dialog::backdrop{background:#1c332ab8;backdrop-filter:blur(3px)}
 .art-pin.is-visited{background:#bdc8bd;box-shadow:0 0 0 1px #7c94836a,0 1px 6px #263e2c1c}
 .art-pin.is-visited:not(.many):after{background:#546c5a}
 .art-pin.many{width:28px;height:28px;min-width:28px;line-height:24px;font-size:11px;background:#315941}
+.art-pin.many.is-visited{background:#bdc8bd;color:#425d4c}
 .art-pin.is-selected{outline:2px solid #cb9271;outline-offset:3px}
 @media(max-width:555px){.map-maplabel{left:11px;top:11px;padding:9px 10px}.map-maplabel strong{font-size:10px}}
 </style>
@@ -316,7 +317,7 @@ dialog::backdrop{background:#1c332ab8;backdrop-filter:blur(3px)}
             <div id="offlineMap"><div class="offline-message">Approximate map · Connect to view the street map.</div></div>
             <div id="mapEmpty" class="map-empty"><div><strong>No pins yet.</strong><span>Open All exhibitions and add a show to place it on your map.</span></div></div>
           </div>
-          <div class="map-foot"><span id="mapFootText">Select a pin to see the exhibition.</span><div class="color-key" id="colorLegend"><span class="key-item" style="--keycolor:#54866a">To visit</span><span class="key-item" style="--keycolor:#91a297">Visited</span></div></div>
+          <div class="map-foot"><span id="mapFootText">Select a pin to see the exhibition.</span><div class="color-key" id="colorLegend"><span class="key-item" style="--keycolor:#315941">To visit</span><span class="key-item" style="--keycolor:#bdc8bd">Visited</span></div></div>
         </aside>
       </div>
       <div id="areaSummary" class="area-summary"></div>
