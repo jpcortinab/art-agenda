@@ -205,6 +205,16 @@ dialog::backdrop{background:#1c332ab8;backdrop-filter:blur(3px)}
 .cloud-row input{padding:10px 11px;font-size:12px;border:1px solid #dce5d9;border-radius:8px;min-width:190px;flex:1}
 .cloud-section small{color:#879388;font-size:10px;line-height:1.5}
 @media(max-width:555px){.plan-day{min-width:130px}.cloud-sections{padding:14px}.cloud-row input{width:100%}.month-actions #cloudBtn{order:-1}}
+.map-toolbar{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:0 20px 14px;border-bottom:1px solid #e8ede7}
+.map-toolbar>span{color:#718678;font-size:11px;font-weight:750}
+.map-filter{display:flex;gap:6px;flex-wrap:wrap}
+.map-filter button{font-size:11px;font-weight:700;border-radius:100px;border:1px solid #d9e5d9;background:#fff;padding:7px 12px;color:#536b59;cursor:pointer}
+.map-filter button.active{color:#fff;background:#2d513d;border-color:#2d513d}
+.map-view .watch-layout{display:block}
+.map-view .list-pane,.map-view .plan-strip,.map-view .area-summary{display:none}
+.map-view .map-pane{position:relative;top:auto;width:100%}
+.map-view .map-container{height:min(72vh,790px);min-height:515px}
+@media(max-width:555px){.map-view .map-container{height:65vh;min-height:400px}.map-toolbar{padding:0 14px 13px;gap:8px}.map-filter button{padding:7px 10px}}
 </style>
 </head>
 <body>
@@ -214,7 +224,8 @@ dialog::backdrop{background:#1c332ab8;backdrop-filter:blur(3px)}
         <div class="identity"><span class="glyph" aria-hidden="true"></span> ART AGENDA</div>
         <nav class="topnav" aria-label="Pages">
           <a href="#watchlist" class="navlink active" id="navWatch" aria-current="page">My watchlist <span class="pill-count" id="navWatchCount">17</span></a>
-          <a href="#explore" class="navlink" id="navExplore">All exhibitions <span class="pill-count" id="navCatalogCount">24</span></a>
+          <a href="#map" class="navlink" id="navMap">Map</a>
+          <a href="#explore" class="navlink" id="navExplore">All exhibitions <span class="pill-count" id="navCatalogCount">25</span></a>
         </nav>
       </div>
       <div class="hero">
@@ -280,6 +291,7 @@ dialog::backdrop{background:#1c332ab8;backdrop-filter:blur(3px)}
         </div>
         <aside class="map-pane" aria-label="Map of saved exhibitions">
           <div class="map-head"><div><h3>The watchlist map</h3><p id="mapSubtitle">Your exhibitions, pinned around the city.</p></div><button type="button" class="ghost mini" id="fitPins">Fit pins ↗</button></div>
+          <div class="map-toolbar" id="mapToolbar" hidden><span>Show exhibitions</span><div class="map-filter" aria-label="Map pin filters"><button type="button" data-map-status="all" class="active" aria-pressed="true">All</button><button type="button" data-map-status="todo" aria-pressed="false">To visit</button><button type="button" data-map-status="done" aria-pressed="false">Visited</button></div></div>
           <div class="map-container">
             <div id="map" role="region" aria-label="Map of current-month watchlist pins"></div>
             <div id="offlineMap"><div class="offline-message">Approximate map · Connect to view the street map.</div></div>
@@ -457,7 +469,7 @@ if(db.schemaVersion<5){
 }
 let month=localStorageGetMonth() || currentMonth();
 let page='watchlist';
-const filters={watchStatus:'all',watchTerm:'',watchArea:'all',planDate:null,catalogDates:'month',catalogStatus:'all',catalogTerm:'',catalogArea:'all'};
+const filters={watchStatus:'all',watchTerm:'',watchArea:'all',planDate:null,mapStatus:'all',catalogDates:'month',catalogStatus:'all',catalogTerm:'',catalogArea:'all'};
 let map=null,markers=[],leafletLayer=null,offlineMode=false,focusedId=null,geoCoordinates=null,toastTimeout=null;
 function localStorageGetMonth(){try {const m=localStorage.getItem('jp-nyc-art-month');return /^\d{4}-\d{2}$/.test(m||'')?m:null;}catch(e){return null;}}
 function persist(notify=true){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(db));localStorage.setItem('jp-nyc-art-month',month);localAvailable=true;}catch(e){localAvailable=false;} if(notify)document.dispatchEvent(new Event('jp-art-changed'));}
@@ -504,6 +516,7 @@ function visibleWatch(){
    .sort((a,b)=>(wasVisited(a.id)?1:0)-(wasVisited(b.id)?1:0)||String(a.close||'9999').localeCompare(String(b.close||'9999'))||a.artist.localeCompare(b.artist));
 }
 function currentWatch(){const m=new Map(allShows().map(s=>[s.id,s]));return watchIDs().map(id=>m.get(id)).filter(Boolean);}
+function mapVisibleShows(){return page==='map'?currentWatch().filter(s=>filters.mapStatus==='all'||(filters.mapStatus==='done'?wasVisited(s.id):!wasVisited(s.id))):visibleWatch();}
 function visibleCatalog(){
   const q=filters.catalogTerm.toLowerCase();
   return allShows().filter(s=>
@@ -558,7 +571,7 @@ function renderStats(){
   const w=currentWatch();const done=w.filter(s=>wasVisited(s.id)).length;
   $('heroSaved').textContent=w.length;$('heroDone').textContent=done;$('heroCatalog').textContent=allShows().length;
   $('navWatchCount').textContent=w.length;$('navCatalogCount').textContent=allShows().length;
-  $('watchTitle').textContent=shortMonth(month)+' watchlist';
+  $('watchTitle').textContent=shortMonth(month)+(page==='map'?' gallery map':' watchlist');
   $('watchSubtitle').textContent=`${w.length} saved · ${done} visited · ${w.length-done} left to see. Click a card's pin to locate it on the map.`;
   $('monthSelect').value=month;
   $('formMonth').textContent=monthName(month);
@@ -577,8 +590,10 @@ function renderWatch(){
   $('areaSummary').innerHTML=Object.entries(areaCounts).sort((a,b)=>b[1]-a[1]).map(([name,n])=>`<span class="area">${escapeHtml(name)} &nbsp;<strong>${n}</strong></span>`).join('');
   const prev=shiftMonth(month,-1),remaining=(db.watchByMonth[prev]||[]).filter(id=>{const s=getShow(id);return s&&!wasVisited(id)&&isOpenInMonth(s)&&!inWatchlist(id);});
   $('carryOver').title=remaining.length?`${remaining.length} unvisited show(s) from ${monthName(prev)} are still running`:'No unvisited shows available to carry forward from the previous month';
-  $('mapSubtitle').textContent=`${shows.length} shows visible · Tap a pin for details`;
-  renderMarkers(shows);
+  const mapShows=mapVisibleShows();
+  $('mapSubtitle').textContent=`${mapShows.length} exhibition${mapShows.length===1?'':'s'} visible · Tap a pin for details`;
+  document.querySelectorAll('[data-map-status]').forEach(b=>{const active=b.dataset.mapStatus===filters.mapStatus;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+  renderMarkers(mapShows);
 }
 function renderDiscover(){
   let shows=visibleCatalog();$('catalogCount').textContent=`${shows.length} exhibitions`;
@@ -630,15 +645,19 @@ function setMonth(newMonth){
   persist();render();setTimeout(fitMapPins,100);
 }
 function applyRoute(){
-  page=window.location.hash==='#explore'?'explore':'watchlist';
-  $('watchlistView').hidden=page!=='watchlist';$('exploreView').hidden=page!=='explore';
-  $('navWatch').classList.toggle('active',page==='watchlist');$('navExplore').classList.toggle('active',page==='explore');
-  if(page==='watchlist')$('navWatch').setAttribute('aria-current','page');else $('navWatch').removeAttribute('aria-current');
-  if(page==='explore')$('navExplore').setAttribute('aria-current','page');else $('navExplore').removeAttribute('aria-current');
-  if(page==='watchlist')setTimeout(()=>{if(map){map.invalidateSize();fitMapPins();}},90);
+  page=window.location.hash==='#explore'?'explore':window.location.hash==='#map'?'map':'watchlist';
+  $('watchlistView').hidden=page==='explore';$('exploreView').hidden=page!=='explore';
+  $('watchlistView').classList.toggle('map-view',page==='map');$('mapToolbar').hidden=page!=='map';
+  for(const [id,view] of [['navWatch','watchlist'],['navMap','map'],['navExplore','explore']]){
+    const node=$(id),active=page===view;
+    node.classList.toggle('active',active);
+    if(active)node.setAttribute('aria-current','page');else node.removeAttribute('aria-current');
+  }
+  renderStats();renderWatch();
+  if(page!=='explore')setTimeout(()=>{if(map){map.invalidateSize();fitMapPins();}},90);
 }
 function goPage(name){
-  const hash=name==='explore'?'#explore':'#watchlist';
+  const hash=name==='explore'?'#explore':name==='map'?'#map':'#watchlist';
   if(window.location.hash!==hash)window.location.hash=hash;
   else applyRoute();
 }
@@ -710,8 +729,8 @@ function initMap(){
   renderMarkers(visibleWatch());setTimeout(()=>{map.invalidateSize();fitMapPins();},140);
 }
 function fitMapPins(){
-  if(!map || page!=='watchlist')return;
-  const points=locationGroups(visibleWatch()).map(g=>g.point);
+  if(!map || page==='explore')return;
+  const points=locationGroups(mapVisibleShows()).map(g=>g.point);
   if(!points.length)return;
   if(points.length===1)map.setView(points[0],15);
   else map.fitBounds(L.latLngBounds(points),{padding:[43,43],maxZoom:15,animate:false});
@@ -862,6 +881,7 @@ document.addEventListener('click',event=>{
   if(d.go){goPage(d.go);return;}
   if(d.newShow){openShowDialog();return;}
   if(d.watchStatus){filters.watchStatus=d.watchStatus;renderWatch();return;}
+  if(d.mapStatus){filters.mapStatus=d.mapStatus;renderWatch();fitMapPins();return;}
   if(d.planDate){filters.planDate=filters.planDate===d.planDate?null:d.planDate;renderPlan();renderWatch();fitMapPins();return;}
 });
 document.addEventListener('change',event=>{
@@ -880,7 +900,7 @@ $('catalogStatus').addEventListener('change',e=>{filters.catalogStatus=e.target.
 $('carryOver').addEventListener('click',carryOver);
 $('clearPlan').addEventListener('click',()=>{filters.planDate=null;renderPlan();renderWatch();fitMapPins();});
 $('exploreFromWatch').addEventListener('click',()=>goPage('explore'));
-$('backToWatch').addEventListener('click',()=>goPage('watchlist'));
+$('backToWatch').addEventListener('click',()=>goPage('map'));
 $('fitPins').addEventListener('click',fitMapPins);
 $('newShow').addEventListener('click',()=>openShowDialog());
 $('newShowExplore').addEventListener('click',()=>openShowDialog());
